@@ -4,6 +4,7 @@
 import { useState, useCallback, useRef } from 'react';
 import type { SSEEventData, GenerateRequest } from '../types/events';
 import { generateCodeSSE } from '../services/api';
+import { useChatStore } from '../store/chatStore';
 
 export interface UseSSEResult {
   events: SSEEventData[];
@@ -20,6 +21,8 @@ export const useSSE = (): UseSSEResult => {
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  const { updateCurrentCost, setCurrentSession, addSession } = useChatStore();
 
   const stopStream = useCallback(() => {
     if (eventSourceRef.current) {
@@ -100,6 +103,25 @@ export const useSSE = (): UseSSEResult => {
                   };
 
                   setEvents((prev) => [...prev, event]);
+
+                  // Handle session_created event
+                  if (currentEventType === 'session_created') {
+                    const { session_id, title, created_at } = data;
+                    setCurrentSession(session_id);
+                    addSession({
+                      id: session_id,
+                      title,
+                      created_at,
+                      total_tokens: 0,
+                      total_cost_usd: 0.0
+                    });
+                  }
+
+                  // Handle cost_update event
+                  if (currentEventType === 'cost_update') {
+                    const { total_tokens, estimated_cost_usd } = data;
+                    updateCurrentCost(total_tokens, estimated_cost_usd);
+                  }
 
                   // Check for completion
                   if (currentEventType === 'complete') {

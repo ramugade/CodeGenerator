@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.routes import generate
+from app.api.routes import generate, sessions
 
 # Create FastAPI app
 app = FastAPI(
@@ -23,6 +23,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(generate.router, prefix="/api", tags=["generate"])
+app.include_router(sessions.router, prefix="/api", tags=["sessions"])
 
 
 @app.get("/api/health")

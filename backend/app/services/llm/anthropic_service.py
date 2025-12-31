@@ -17,12 +17,23 @@ class AnthropicService(BaseLLMService):
 
     # Pricing per 1M tokens (as of 2025)
     PRICING = {
-        "claude-3-opus-20240229": {"input": 15.00, "output": 75.00},
-        "claude-3-sonnet-20240229": {"input": 3.00, "output": 15.00},
+        # Claude 4.5 models (latest)
+        "claude-opus-4-5-20251101": {"input": 15.00, "output": 75.00},
+        "claude-sonnet-4-5-20250929": {"input": 3.00, "output": 15.00},
+        "claude-haiku-4-5-20251001": {"input": 0.80, "output": 4.00},
+        # Claude 4 models
+        "claude-opus-4-1-20250805": {"input": 15.00, "output": 75.00},
+        "claude-opus-4-20250514": {"input": 15.00, "output": 75.00},
+        "claude-sonnet-4-20250514": {"input": 3.00, "output": 15.00},
+        # Claude 3.7 and 3.5 models
+        "claude-3-7-sonnet-20250219": {"input": 3.00, "output": 15.00},
+        "claude-3-5-haiku-20241022": {"input": 0.80, "output": 4.00},
+        # Claude 3 legacy models
         "claude-3-haiku-20240307": {"input": 0.25, "output": 1.25},
+        "claude-3-opus-20240229": {"input": 15.00, "output": 75.00},
     }
 
-    def __init__(self, model: str = "claude-3-sonnet-20240229"):
+    def __init__(self, model: str = "claude-sonnet-4-5-20250929"):
         """Initialize Anthropic service.
 
         Args:
@@ -110,7 +121,7 @@ class AnthropicService(BaseLLMService):
             Cost in USD
         """
         pricing = self.PRICING.get(
-            self.model, self.PRICING["claude-3-sonnet-20240229"]
+            self.model, self.PRICING["claude-sonnet-4-5-20250929"]
         )
 
         input_cost = (token_usage.prompt_tokens / 1_000_000) * pricing["input"]

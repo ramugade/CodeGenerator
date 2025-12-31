@@ -18,6 +18,22 @@ export const healthCheck = async () => {
   return response.data;
 };
 
-export const generateCodeSSE = (request: GenerateRequest) => {
+export const generateCodeSSE = (_request: GenerateRequest) => {
   return `${API_BASE_URL}/api/generate`;
+};
+
+export const sessionAPI = {
+  listSessions: async () => {
+    const response = await api.get('/api/sessions');
+    return response.data;
+  },
+
+  getSession: async (sessionId: string) => {
+    const response = await api.get(`/api/sessions/${sessionId}`);
+    return response.data;
+  },
+
+  deleteSession: async (sessionId: string) => {
+    await api.delete(`/api/sessions/${sessionId}`);
+  }
 };

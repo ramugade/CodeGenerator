@@ -1,6 +1,6 @@
 """API request and response schemas."""
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from app.agents.state import TestCase
 
 
@@ -45,17 +45,25 @@ class HealthResponse(BaseModel):
     version: str = Field(description="Application version")
 
 
+class MessageDTO(BaseModel):
+    """Single message DTO for history playback"""
+    type: str
+    content: dict
+    timestamp: str
+    order: int
+
 class SessionResponse(BaseModel):
     """Response schema for session endpoints."""
-
     session_id: str
-    user_query: str
-    llm_provider: str
-    status: str
+    title: str
     created_at: str
     updated_at: str
-    final_code: Optional[str] = None
-    final_output: Optional[str] = None
+    status: str
+    llm_provider: str
+    total_tokens: int
+    total_cost_usd: float
     iterations: int
-    token_usage: Optional[dict] = None
-    estimated_cost_usd: float
+    messages: Optional[List[MessageDTO]] = None
+
+class SessionListResponse(BaseModel):
+    sessions: List[SessionResponse]
