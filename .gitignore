@@ -55,6 +55,8 @@ yarn-error.log*
 # Build outputs
 frontend/dist/
 frontend/build/
+frontend-bckup/
+frontend-temp/
 
 # Logs
 *.log

@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     EXECUTION_TIMEOUT: int = 5  # seconds
 
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:5173"]  # Directive 12 - Port 5173
+    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:8080"]  # Directive 12 - Port 5173 and 8080
 
     class Config:
         env_file = ".env"
