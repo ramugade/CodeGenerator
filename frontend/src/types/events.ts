@@ -76,7 +76,27 @@ export interface ErrorEvent {
   error: string;
 }
 
+export interface SessionCreatedEvent {
+  session_id: string;
+  title: string;
+  llm_provider: string;
+  created_at: string;
+}
+
+export interface CostUpdateEvent {
+  total_tokens: number;
+  estimated_cost_usd: number;
+  step_breakdown: Record<string, any>;
+}
+
+export interface UserQueryEvent {
+  query: string;
+  timestamp: string;
+}
+
 export type SSEEventData =
+  | { type: 'user_query'; data: UserQueryEvent }
+  | { type: 'session_created'; data: SessionCreatedEvent }
   | { type: 'planning'; data: PlanningEvent }
   | { type: 'test_inference'; data: TestInferenceEvent }
   | { type: 'test_inference_skipped'; data: TestInferenceSkippedEvent }
@@ -84,12 +104,14 @@ export type SSEEventData =
   | { type: 'execution'; data: ExecutionEvent }
   | { type: 'validation'; data: ValidationEvent }
   | { type: 'error_fixing'; data: ErrorFixingEvent }
+  | { type: 'cost_update'; data: CostUpdateEvent }
   | { type: 'complete'; data: CompleteEvent }
   | { type: 'error'; data: ErrorEvent };
 
 export interface GenerateRequest {
   query: string;
   llm_provider: 'openai' | 'anthropic';
+  session_id?: string;
   user_provided_tests?: TestCase[];
   max_iterations?: number;
 }

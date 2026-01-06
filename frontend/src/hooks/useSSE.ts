@@ -1,25 +1,33 @@
 /**
  * Custom hook for Server-Sent Events (SSE) streaming
+ * Integrated with Zustand store for centralized state management
  */
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import type { SSEEventData, GenerateRequest } from '../types/events';
-import { generateCodeSSE } from '../services/api';
+import { useChatStore } from '../store/chatStore';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface UseSSEResult {
-  events: SSEEventData[];
-  isConnected: boolean;
-  isComplete: boolean;
-  error: string | null;
   startStream: (request: GenerateRequest) => void;
   stopStream: () => void;
 }
 
 export const useSSE = (): UseSSEResult => {
-  const [events, setEvents] = useState<SSEEventData[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  // Get store actions
+  const {
+    setEvents,
+    addEvent,
+    setIsConnected,
+    setIsComplete,
+    setError,
+    setCurrentSessionId,
+    addSession,
+    touchSession,
+    updateCurrentCost,
+  } = useChatStore();
 
   const stopStream = useCallback(() => {
     if (eventSourceRef.current) {
@@ -27,20 +35,34 @@ export const useSSE = (): UseSSEResult => {
       eventSourceRef.current = null;
       setIsConnected(false);
     }
-  }, []);
+  }, [setIsConnected]);
 
   const startStream = useCallback((request: GenerateRequest) => {
-    // Reset state
-    setEvents([]);
-    setIsComplete(false);
-    setError(null);
-
     // Stop any existing stream
     stopStream();
 
+    // Reset state and add user query event immediately to UI
+    setIsComplete(false);
+    setError(null);
+
+    const userQueryEvent: SSEEventData = {
+      type: 'user_query',
+      data: {
+        query: request.query,
+        timestamp: new Date().toISOString()
+      }
+    };
+    if (request.session_id) {
+      addEvent(userQueryEvent);
+    } else {
+      setEvents([userQueryEvent]);
+    }
+    if (request.session_id) {
+      touchSession(request.session_id);
+    }
+
     try {
-      // Create POST request to get SSE stream
-      const url = generateCodeSSE(request);
+      const url = `${API_BASE_URL}/api/generate`;
 
       // Use fetch for POST with SSE
       fetch(url, {
@@ -99,12 +121,36 @@ export const useSSE = (): UseSSEResult => {
                     data,
                   };
 
-                  setEvents((prev) => [...prev, event]);
+                  addEvent(event);
+
+                  // Handle session_created event
+                  if (currentEventType === 'session_created') {
+                    const { session_id, title, created_at } = data;
+                    setCurrentSessionId(session_id);
+                    addSession({
+                      id: session_id,
+                      title,
+                      created_at,
+                      updated_at: created_at,
+                      total_tokens: 0,
+                      total_cost_usd: 0
+                    });
+                  }
+
+                  // Handle cost_update event
+                  if (currentEventType === 'cost_update') {
+                    const { total_tokens, estimated_cost_usd } = data;
+                    updateCurrentCost(total_tokens, estimated_cost_usd);
+                  }
 
                   // Check for completion
                   if (currentEventType === 'complete') {
                     setIsComplete(true);
                     setIsConnected(false);
+                    updateCurrentCost(
+                      data.token_usage.total_tokens,
+                      data.token_usage.estimated_cost_usd
+                    );
                     reader.cancel();
                     break;
                   } else if (currentEventType === 'error') {
@@ -132,13 +178,9 @@ export const useSSE = (): UseSSEResult => {
       setError(err.message);
       setIsConnected(false);
     }
-  }, [stopStream]);
+  }, [stopStream, setEvents, setIsConnected, setIsComplete, setError, setCurrentSessionId, addSession, addEvent, touchSession, updateCurrentCost]);
 
   return {
-    events,
-    isConnected,
-    isComplete,
-    error,
     startStream,
     stopStream,
   };

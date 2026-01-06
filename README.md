@@ -10,6 +10,7 @@ A full-stack application with a chat interface that generates, executes, and val
 - 🔒 **Subprocess Sandbox** - OS-level isolation for secure code execution (Directive 06)
 - 📊 **Per-Node Token Tracking** - Detailed observability with LangSmith integration
 - 🎯 **Streaming UI** - Real-time updates showing agent progress
+- 🗂️ **Session History** - Resume past chats, ordered by latest activity
 - 🚫 **Anti-Hardcoding Detection** - Prevents LLM from hardcoding solutions
 
 ## Architecture

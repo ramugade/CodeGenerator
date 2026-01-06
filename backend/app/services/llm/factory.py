@@ -31,7 +31,7 @@ class LLMFactory:
             default_model = "gpt-4-turbo-preview"
             return OpenAIService(model=model or default_model)
         elif provider == "anthropic":
-            default_model = "claude-3-sonnet-20240229"
+            default_model = "claude-sonnet-4-5-20250929"
             return AnthropicService(model=model or default_model)
         else:
             raise ValueError(
