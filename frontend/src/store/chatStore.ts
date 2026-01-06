@@ -13,6 +13,14 @@ interface Session {
   total_cost_usd: number;
 }
 
+const sortSessions = (sessions: Session[]) => {
+  return [...sessions].sort((a, b) => {
+    const aTime = new Date(a.updated_at ?? a.created_at).getTime();
+    const bTime = new Date(b.updated_at ?? b.created_at).getTime();
+    return bTime - aTime;
+  });
+};
+
 interface ChatStore {
   // Sessions
   sessions: Session[];
@@ -39,8 +47,11 @@ interface ChatStore {
   // Actions
   setSessions: (sessions: Session[]) => void;
   addSession: (session: Session) => void;
+  updateSession: (sessionId: string, updates: Partial<Session>) => void;
+  touchSession: (sessionId: string, updatedAt?: string) => void;
   deleteSession: (sessionId: string) => void;
   setCurrentSession: (sessionId: string | null) => void;
+  setCurrentSessionId: (sessionId: string | null) => void;
 
   setEvents: (events: SSEEventData[]) => void;
   addEvent: (event: SSEEventData) => void;
@@ -70,10 +81,28 @@ export const useChatStore = create<ChatStore>((set) => ({
   lastUserQuery: null,
 
   // Session actions
-  setSessions: (sessions) => set({ sessions }),
+  setSessions: (sessions) => set({ sessions: sortSessions(sessions) }),
 
   addSession: (session) => set((state) => ({
-    sessions: [session, ...state.sessions]
+    sessions: sortSessions([session, ...state.sessions])
+  })),
+
+  updateSession: (sessionId, updates) => set((state) => ({
+    sessions: sortSessions(
+      state.sessions.map((session) =>
+        session.id === sessionId ? { ...session, ...updates } : session
+      )
+    )
+  })),
+
+  touchSession: (sessionId, updatedAt) => set((state) => ({
+    sessions: sortSessions(
+      state.sessions.map((session) =>
+        session.id === sessionId
+          ? { ...session, updated_at: updatedAt || new Date().toISOString() }
+          : session
+      )
+    )
   })),
 
   deleteSession: (sessionId) => set((state) => ({
@@ -89,6 +118,10 @@ export const useChatStore = create<ChatStore>((set) => ({
     currentSessionCost: 0,
     isComplete: false,
     error: null
+  }),
+
+  setCurrentSessionId: (sessionId) => set({
+    currentSessionId: sessionId,
   }),
 
   // Event actions

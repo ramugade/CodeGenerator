@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { sessionAPI } from "../../services/api";
 import { useChatStore } from "../../store/chatStore";
+import type { SSEEventData } from "../../types/events";
 
 const groupLabelForDate = (iso: string) => {
   const date = new Date(iso);
@@ -29,6 +30,11 @@ export const Sidebar = () => {
     setCurrentSession,
     deleteSession: deleteSessionFromStore,
     clearEvents,
+    setEvents,
+    updateCurrentCost,
+    setIsComplete,
+    setError,
+    setLastUserQuery,
   } = useChatStore();
 
   useEffect(() => {
@@ -51,6 +57,7 @@ export const Sidebar = () => {
   const handleNewChat = () => {
     setCurrentSession(null);
     clearEvents();
+    setLastUserQuery(null);
   };
 
   const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
@@ -65,19 +72,44 @@ export const Sidebar = () => {
     }
   };
 
-  const handleSelectSession = (sessionId: string) => {
-    setCurrentSession(sessionId);
-    // TODO: Load session history here when implemented
+  const handleSelectSession = async (sessionId: string) => {
+    if (sessionId === currentSessionId) return;
+    try {
+      const data = await sessionAPI.getSession(sessionId);
+      const messages = Array.isArray(data.messages) ? data.messages : [];
+      const ordered = [...messages].sort((a, b) => a.order - b.order);
+      const loadedEvents = ordered.map((msg: any) => ({
+        type: msg.type,
+        data: msg.content,
+      })) as SSEEventData[];
+
+      setCurrentSession(sessionId);
+      setEvents(loadedEvents);
+      updateCurrentCost(data.total_tokens || 0, data.total_cost_usd || 0);
+      setIsComplete(loadedEvents.some((event) => event.type === "complete"));
+      setError(null);
+      setLastUserQuery(null);
+    } catch (error) {
+      console.error("Failed to load session:", error);
+    }
   };
 
+  const sortedSessions = useMemo(() => {
+    return [...sessions].sort((a, b) => {
+      const aTime = new Date(a.updated_at ?? a.created_at).getTime();
+      const bTime = new Date(b.updated_at ?? b.created_at).getTime();
+      return bTime - aTime;
+    });
+  }, [sessions]);
+
   const groupedSessions = useMemo(() => {
-    return sessions.reduce<Record<string, typeof sessions>>((acc, session) => {
-      const label = groupLabelForDate(session.created_at);
+    return sortedSessions.reduce<Record<string, typeof sessions>>((acc, session) => {
+      const label = groupLabelForDate(session.updated_at ?? session.created_at);
       if (!acc[label]) acc[label] = [];
       acc[label].push(session);
       return acc;
     }, {});
-  }, [sessions]);
+  }, [sortedSessions]);
 
   return (
     <aside className="w-64 h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
@@ -154,7 +186,7 @@ export const Sidebar = () => {
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
             <User size={16} className="text-primary-foreground" />
           </div>
-          <span className="text-sm font-medium text-sidebar-foreground">Vedang.AI</span>
+          <span className="text-sm font-medium text-sidebar-foreground">Subodh Ramugade</span>
         </div>
       </div>
 

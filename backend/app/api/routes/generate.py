@@ -1,7 +1,7 @@
 """POST /api/generate endpoint with Server-Sent Events streaming."""
-import uuid
 import asyncio
 from typing import AsyncGenerator
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -63,8 +63,18 @@ async def generate_code_stream(request: GenerateRequest, db: AsyncSession) -> As
             max_iterations=request.max_iterations,
         )
 
-        # 3. Run LangGraph workflow
-        message_order = 0
+        # 3. Persist user query as the first message in this run
+        message_order = await SessionService.get_next_message_order(db, session_id)
+        await SessionService.save_message(
+            db,
+            session_id,
+            "user_query",
+            {"query": request.query, "timestamp": datetime.utcnow().isoformat()},
+            message_order,
+        )
+        message_order += 1
+
+        # 4. Run LangGraph workflow
 
         async for state in code_generation_graph.astream(initial_state):
             # Get the actual state from the dict

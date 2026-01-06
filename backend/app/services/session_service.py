@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, update, func
 from sqlalchemy.orm import selectinload
 from datetime import datetime
 from app.db.models import Session, Message, TokenUsage
@@ -31,14 +31,28 @@ class SessionService:
     @staticmethod
     async def save_message(db: AsyncSession, session_id: str,
                           message_type: str, content: dict, order_index: int):
+        now = datetime.utcnow()
         message = Message(
             session_id=session_id,
             message_type=message_type,
             content=content,
-            order_index=order_index
+            order_index=order_index,
+            timestamp=now,
         )
         db.add(message)
+        await db.execute(
+            update(Session)
+            .where(Session.id == session_id)
+            .values(updated_at=now)
+        )
         await db.commit()
+
+    @staticmethod
+    async def get_next_message_order(db: AsyncSession, session_id: str) -> int:
+        stmt = select(func.max(Message.order_index)).where(Message.session_id == session_id)
+        result = await db.execute(stmt)
+        max_order = result.scalar_one_or_none()
+        return (max_order if max_order is not None else -1) + 1
 
     @staticmethod
     async def save_token_usage(db: AsyncSession, session_id: str,

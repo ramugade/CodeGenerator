@@ -23,8 +23,9 @@ export const useSSE = (): UseSSEResult => {
     setIsConnected,
     setIsComplete,
     setError,
-    setCurrentSession,
+    setCurrentSessionId,
     addSession,
+    touchSession,
     updateCurrentCost,
   } = useChatStore();
 
@@ -51,7 +52,14 @@ export const useSSE = (): UseSSEResult => {
         timestamp: new Date().toISOString()
       }
     };
-    setEvents([userQueryEvent]);
+    if (request.session_id) {
+      addEvent(userQueryEvent);
+    } else {
+      setEvents([userQueryEvent]);
+    }
+    if (request.session_id) {
+      touchSession(request.session_id);
+    }
 
     try {
       const url = `${API_BASE_URL}/api/generate`;
@@ -118,11 +126,12 @@ export const useSSE = (): UseSSEResult => {
                   // Handle session_created event
                   if (currentEventType === 'session_created') {
                     const { session_id, title, created_at } = data;
-                    setCurrentSession(session_id);
+                    setCurrentSessionId(session_id);
                     addSession({
                       id: session_id,
                       title,
                       created_at,
+                      updated_at: created_at,
                       total_tokens: 0,
                       total_cost_usd: 0
                     });
@@ -169,7 +178,7 @@ export const useSSE = (): UseSSEResult => {
       setError(err.message);
       setIsConnected(false);
     }
-  }, [stopStream, setEvents, setIsConnected, setIsComplete, setError, setCurrentSession, addSession, addEvent, updateCurrentCost]);
+  }, [stopStream, setEvents, setIsConnected, setIsComplete, setError, setCurrentSessionId, addSession, addEvent, touchSession, updateCurrentCost]);
 
   return {
     startStream,
