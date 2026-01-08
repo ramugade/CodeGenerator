@@ -109,36 +109,18 @@ CodeGenerator/
 
 ## Key Architectural Decisions (All 20 Directives Applied)
 
-1. **POST + fetch() Streaming** (Directive 02) - NOT EventSource (can't send JSON body)
-2. **Structured JSON Output** (Directive 03) - NO markdown cleanup, enforce via schemas
+1. **POST + fetch() Streaming** (Directive 02) 
+2. **Structured JSON Output** (Directive 03) 
 3. **User Tests First-Class** (Directive 04) - Inference is optional fallback
 4. **Anti-Hardcoding Protection** (Directive 05) - Detect patterns + randomized tests
 5. **Subprocess Sandbox** (Directive 06) - PRIMARY isolation (OS-level)
 6. **Cancellation Support** (Directive 07) - Track PIDs, SIGTERM/SIGKILL
 7. **Port 5173** (Directive 08, 20) - Vite default, no alternatives
 8. **Per-Node Token Tracking** (Directive 09) - Every LLM call logged
-9. **uv sync ONLY** (Directive 11) - NO Poetry, NO requirements.txt
+9. **uv sync ONLY** (Directive 11) - uv only
 10. **optional_test_inference.py** (Directive 17) - File name matches concept
 11. **DB Folder Convention** (Directive 19) - File at backend/db/, code at backend/app/db/
 
-## Development Status
-
-**Phase 1: Foundation ✅ COMPLETE**
-- ✅ Backend structure created
-- ✅ FastAPI with health check endpoint
-- ✅ Frontend with Vite + React + TailwindCSS
-- ✅ SQLite database configuration
-- ✅ Both services run locally
-
-**Next: Phase 2 - LLM Service Layer with Structured Output**
-
-## Documentation
-
-See `claude-tracker/` folder for complete implementation plan:
-- [IMPLEMENTATION_READY.md](claude-tracker/IMPLEMENTATION_READY.md) - Quick reference (SOURCE OF TRUTH)
-- [development_plan.md](claude-tracker/development_plan.md) - Full 8-phase plan
-- [critical_updates.md](claude-tracker/critical_updates.md) - All 20 directives explained
-- [chat_tracker.md](claude-tracker/chat_tracker.md) - Decision history
 
 ## License
 
